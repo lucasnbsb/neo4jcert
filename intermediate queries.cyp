@@ -68,3 +68,14 @@ UNWIND m.countries as cnt
 with m, trim(cnt) as country
 with country, count(m.title) as movies
 return country, movies 
+
+// SUBQUERIES
+MATCH (g:Genre)
+CALL {
+    with g
+    MATCH (m:Movie)-[:IN_GENRE]->(g)
+    WHERE 'France' in m.countries
+    return count(*) as numMovies
+}
+RETURN g.name AS genre, numMovies
+ORDER BY numMovies DESC
