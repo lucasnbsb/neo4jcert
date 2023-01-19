@@ -34,3 +34,37 @@ WHERE m.title = 'Toy Story'
 MATCH (p)-[:ACTED_IN]->()<-[:ACTED_IN]-(p2:Person)
 WHERE p.name <> p2.name
 RETURN  DISTINCT(p.name), p2.name
+
+// COLLECTING NODES
+MATCH (p:Person)-[:DIRECTED]->(m:Movie)
+return p.name, size(collect(m.title)) as directedMovies
+order by directedMovies DESC
+
+// CREATING LISTS
+MATCH (m:Movie) <-[:ACTED_IN]- (p:Person)
+RETURN DISTINCT(m.title), size(collect(p.name)) as counActors
+ORDER BY counActors DESC
+
+// list comprehension
+MATCH (n:Movie)
+WHERE n.imdbRating IS NOT NULL and n.poster IS NOT NULL
+WITH n{.title, .imdbRating, 
+[(actor:Person)-[:ACTED_IN]->(n) | actor.name],
+[(n)-[:IN_GENRE]->(gen) | gen.name]
+}
+ORDER BY n.imdbRating DESC LIMIT 4
+RETURN collect(n)
+
+// PIPELINING
+MATCH (p:Person)-[:ACTED_IN]->(m:Movie)<-[r:RATED]-(:User)
+where p.name = 'Tom Hanks'
+WITH avg(r.rating) as avgr, m
+RETURN avgr, m.title
+ORDER BY avgr DESC limit 1
+
+// UNWIND
+MATCH (m:Movie)
+UNWIND m.countries as cnt
+with m, trim(cnt) as country
+with country, count(m.title) as movies
+return country, movies 
